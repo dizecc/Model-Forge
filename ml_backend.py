@@ -24,8 +24,6 @@ def prepare_data(df, target_column):
     categorical_features = x.select_dtypes(include=["object", "category"]).columns.tolist()
     return x, y, numeric_features, categorical_features
 
-def is_regression_task(y):
-    return pd.api.types.is_float_dtype(y) or y.nunique() > 10
 
 def build_preprocessor(numeric_features, categorical_features):
     numeric_transformer = Pipeline([
@@ -95,59 +93,53 @@ def handle_outliers(df, method="skip", threshold=3):
 
     return df, outlier_cols
 
-def show_permutation_importance(model_pipeline, X_test, y_test, numeric_features, categorical_features, plot=True):
-    try:
-        preprocessor = model_pipeline.named_steps['preprocessor']
-        classifier = model_pipeline.named_steps['classifier']
-
-        X_test_transformed = preprocessor.transform(X_test)
-
-        cat_encoder = preprocessor.named_transformers_['cat'].named_steps['encoder']
-        cat_feature_names = cat_encoder.get_feature_names_out(categorical_features)
-        all_feature_names = list(numeric_features) + list(cat_feature_names)
-
-        result = permutation_importance(
-            classifier,
-            X_test_transformed,
-            y_test,
-            n_repeats=10,
-            random_state=42,
-            n_jobs=-1
-        )
-
-        if len(result.importances_mean) != len(all_feature_names):
-            all_feature_names = [f"feature_{i}" for i in range(len(result.importances_mean))]
-
-        importances = pd.Series(result.importances_mean, index=all_feature_names)
-        importances_sorted = importances.sort_values(ascending=False)
-
-        # Show only Top 3
-        top_k = 3
-        top_features = importances_sorted.head(top_k)
-
-        st.markdown(f"### Top {top_k} Most Important Features")
-        st.dataframe(top_features.to_frame("Importance"))
-
-        # if plot:
-        #     fig, ax = plt.subplots(figsize=(4, 2))
-        #     top_features.plot(kind='barh', ax=ax, color="skyblue")
-        #
-        #     ax.set_title("Feature Importance", fontsize=10)
-        #     ax.set_xlabel("Importance", fontsize=8)
-        #     ax.set_ylabel("")
-        #     ax.tick_params(axis='both', labelsize=8)
-        #     ax.invert_yaxis()
-
-            # fig.tight_layout()
-            # st.pyplot(fig)
-
-        return importances_sorted
-
-    except Exception as e:
-        st.error(f"⚠️ Error in calculating permutation importance: {e}")
+# def show_permutation_importance(model_pipeline, x_test, y_test, numeric_features, categorical_features, plot=True):
+#     try:
+#
+#
+#         # Extract preprocessor and classifier from the fitted pipeline
+#         fitted_preprocessor = model_pipeline.named_steps['preprocessor']
+#         classifier = model_pipeline.named_steps['classifier']
+#
+#         # Transform X_test using the fitted preprocessor
+#         x_test_transformed = fitted_preprocessor.transform(x_test)
+#
+#         # Get feature names
+#         cat_encoder = fitted_preprocessor.named_transformers_['cat'].named_steps['encoder']
+#         cat_feature_names = cat_encoder.get_feature_names_out(categorical_features)
+#         all_feature_names = list(numeric_features) + list(cat_feature_names)
+#
+#         # Compute permutation importance
+#         result = permutation_importance(
+#             classifier,
+#             x_test_transformed,
+#             y_test,
+#             n_repeats=10,
+#             random_state=42,
+#             n_jobs=-1
+#         )
+#
+#         # In case feature lengths mismatch
+#         if len(result.importances_mean) != len(all_feature_names):
+#             all_feature_names = [f"feature_{i}" for i in range(len(result.importances_mean))]
+#
+#         importances = pd.Series(result.importances_mean, index=all_feature_names)
+#         importances_sorted = importances.sort_values(ascending=False)
+#
+#         # Show only top k
+#         top_k = 3
+#         top_features = importances_sorted.head(top_k)
+#
+#         st.markdown(f"### Top {top_k} Most Important Features")
+#         st.dataframe(top_features.to_frame("Importance"))
+#
+#         return importances_sorted
+#
+#     except Exception as e:
+#         st.error(f"⚠️ Error in calculating permutation importance: {e}")
 
 
-def run_pro_mode(model_registry, x_train, x_test, y_train, y_test, preprocessor, save_best=False, is_regression=False):
+def run_pro_mode(model_registry, x_train, x_test, y_train, y_test, preprocessor, save_best=False):
     results = []
     best_model = None
     best_score = 0
@@ -212,14 +204,15 @@ def run_pro_mode(model_registry, x_train, x_test, y_train, y_test, preprocessor,
         joblib.dump(best_model, file_path)
         print(f"✅ Best model saved as: {file_path}")
 
+
     # PERMUTATION IMPORTANCE
-    show_permutation_importance(
-        model_pipeline=best_model,
-        X_test=x_test,
-        y_test=y_test,
-        numeric_features=x_train.select_dtypes(include=["int64", "float64"]).columns.tolist(),
-        categorical_features=x_train.select_dtypes(include=["object", "category"]).columns.tolist()
-    )
+    # show_permutation_importance(
+    #     model_pipeline=best_model,
+    #     x_test=x_test,
+    #     y_test=y_test,
+    #     numeric_features=x_train.select_dtypes(include=["int64", "float64"]).columns.tolist(),
+    #     categorical_features=x_train.select_dtypes(include=["object", "category"]).columns.tolist()
+    # )
     # model_filename = f"{best_name}_model.pkl"
     # joblib.dump(best_model, model_filename)
 

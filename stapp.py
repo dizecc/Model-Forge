@@ -6,9 +6,6 @@ import matplotlib.pyplot as plt
 from model_hyperparamaters import model_registry
 from sklearn.metrics import roc_curve, auc, confusion_matrix, ConfusionMatrixDisplay
 
-from regressor_hyperparameters import regressor_registry
-from ml_backend import is_regression_task
-
 
 from ml_backend import (
     prepare_data,
@@ -204,14 +201,14 @@ if uploaded_file is not None:
     if st.button("🚀 Start Training"):
         with st.spinner("Running AutoML pipeline..."):
 
-            st.markdown("<hr style='border: 1px solid #bbb;'>", unsafe_allow_html=True)
+            # st.markdown("<hr style='border: 1px solid #bbb;'>", unsafe_allow_html=True)
 
             # Data prep
             df_clean, outlier_cols = handle_outliers(df, method=outlier_method)
             x, y, numeric_features, categorical_features = prepare_data(df_clean, target_column)
 
-            is_regression = is_regression_task(y)
-            registry = regressor_registry if is_regression else model_registry
+            # is_regression = is_regression_task(y)
+            # registry = regressor_registry if is_regression else model_registry
 
             preprocessor = build_preprocessor(numeric_features, categorical_features)
 
@@ -222,7 +219,8 @@ if uploaded_file is not None:
 
             if model_mode == "Run All Models (Pro Mode)":
                 results, best_model, best_name = run_pro_mode(
-                    registry, x_train, x_test, y_train, y_test, preprocessor, save_best=False,
+
+                    model_registry,x_train, x_test, y_train, y_test, preprocessor, save_best=False
 
                 )
             else:
@@ -280,6 +278,8 @@ if uploaded_file is not None:
                     file_name=model_filename,
                     mime="application/octet-stream"
                 )
+
+            st.markdown("<hr style='border: 1px solid #bbb;'>", unsafe_allow_html=True)
 
             # st.write(f"**Best Model:** {best_name.upper()}")
             # st.write(f"**Accuracy:** {acc:.4f}")
